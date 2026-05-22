@@ -122,6 +122,7 @@ resource "aws_iam_role_policy" "backend_deploy" {
         Action = [
           "lambda:UpdateFunctionCode",
           "lambda:GetFunction",
+          "lambda:GetFunctionConfiguration",
         ]
         Resource = var.backend_lambda_arn
       },
