@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+# Only required after the first apply, once Cognito domain exists and you've
+# added its callback URL to your Google OAuth client.
+
+google_oauth_client_id     = "your-google-client-id.apps.googleusercontent.com"
+google_oauth_client_secret = "your-google-client-secret"
