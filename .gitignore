@@ -1,0 +1,25 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+.DS_Store
+.vscode
+*.log
+coverage
+
+# Terraform
+.terraform/
+terraform.tfvars
+*.tfvars.json
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+# NOTE: .terraform.lock.hcl IS committed (provider version lock)
