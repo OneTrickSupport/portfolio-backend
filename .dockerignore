@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.*
+.git
+.github
+.vscode
+.DS_Store
+infra
+coverage
+*.md
+.terraform
