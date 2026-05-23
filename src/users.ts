@@ -16,26 +16,33 @@ export async function registerUsers(app: FastifyInstance) {
   app.post("/me", { preHandler: requireAuth }, async (req, reply) => {
     const parsed = SyncUserBody.safeParse(req.body);
     if (!parsed.success) {
+      req.log.warn({ userId: req.userId, errors: parsed.error.flatten() }, "invalid upsert user body");
       return reply
         .code(400)
         .send({ error: "Invalid body", details: parsed.error.flatten() });
     }
     const now = new Date().toISOString();
-    await ddb.send(
-      new UpdateCommand({
-        TableName: tableName,
-        Key: { userId: req.userId! },
-        UpdateExpression:
-          "SET email = :e, #n = :n, updatedAt = :ua, createdAt = if_not_exists(createdAt, :ca)",
-        ExpressionAttributeNames: { "#n": "name" },
-        ExpressionAttributeValues: {
-          ":e": parsed.data.email,
-          ":n": parsed.data.name ?? null,
-          ":ua": now,
-          ":ca": now,
-        },
-      }),
-    );
+    try {
+      await ddb.send(
+        new UpdateCommand({
+          TableName: tableName,
+          Key: { userId: req.userId! },
+          UpdateExpression:
+            "SET email = :e, #n = :n, updatedAt = :ua, createdAt = if_not_exists(createdAt, :ca)",
+          ExpressionAttributeNames: { "#n": "name" },
+          ExpressionAttributeValues: {
+            ":e": parsed.data.email,
+            ":n": parsed.data.name ?? null,
+            ":ua": now,
+            ":ca": now,
+          },
+        }),
+      );
+    } catch (err) {
+      req.log.error({ err, userId: req.userId }, "DynamoDB error upserting user");
+      throw err;
+    }
+    req.log.info({ userId: req.userId }, "user upserted");
     return reply.code(204).send();
   });
 }

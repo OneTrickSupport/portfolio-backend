@@ -19,20 +19,29 @@ const CreateItemBody = z.object({
 
 export async function registerItems(app: FastifyInstance) {
   app.get("/items", { preHandler: requireAuth }, async (req) => {
-    const result = await ddb.send(
-      new QueryCommand({
-        TableName: tableName,
-        KeyConditionExpression: "userId = :u",
-        ExpressionAttributeValues: { ":u": req.userId },
-        ScanIndexForward: false,
-      }),
-    );
-    return { items: result.Items ?? [] };
+    let result;
+    try {
+      result = await ddb.send(
+        new QueryCommand({
+          TableName: tableName,
+          KeyConditionExpression: "userId = :u",
+          ExpressionAttributeValues: { ":u": req.userId },
+          ScanIndexForward: false,
+        }),
+      );
+    } catch (err) {
+      req.log.error({ err, userId: req.userId }, "DynamoDB error listing items");
+      throw err;
+    }
+    const items = result.Items ?? [];
+    req.log.info({ userId: req.userId, count: items.length }, "items listed");
+    return { items };
   });
 
   app.post("/items", { preHandler: requireAuth }, async (req, reply) => {
     const parsed = CreateItemBody.safeParse(req.body);
     if (!parsed.success) {
+      req.log.warn({ userId: req.userId, errors: parsed.error.flatten() }, "invalid create item body");
       return reply
         .code(400)
         .send({ error: "Invalid body", details: parsed.error.flatten() });
@@ -43,7 +52,13 @@ export async function registerItems(app: FastifyInstance) {
       content: parsed.data.content,
       createdAt: new Date().toISOString(),
     };
-    await ddb.send(new PutCommand({ TableName: tableName, Item: item }));
+    try {
+      await ddb.send(new PutCommand({ TableName: tableName, Item: item }));
+    } catch (err) {
+      req.log.error({ err, userId: req.userId }, "DynamoDB error creating item");
+      throw err;
+    }
+    req.log.info({ userId: req.userId, itemId: item.itemId }, "item created");
     return reply.code(201).send(item);
   });
 
@@ -51,12 +66,18 @@ export async function registerItems(app: FastifyInstance) {
     "/items/:id",
     { preHandler: requireAuth },
     async (req, reply) => {
-      await ddb.send(
-        new DeleteCommand({
-          TableName: tableName,
-          Key: { userId: req.userId!, itemId: req.params.id },
-        }),
-      );
+      try {
+        await ddb.send(
+          new DeleteCommand({
+            TableName: tableName,
+            Key: { userId: req.userId!, itemId: req.params.id },
+          }),
+        );
+      } catch (err) {
+        req.log.error({ err, userId: req.userId, itemId: req.params.id }, "DynamoDB error deleting item");
+        throw err;
+      }
+      req.log.info({ userId: req.userId, itemId: req.params.id }, "item deleted");
       return reply.code(204).send();
     },
   );
