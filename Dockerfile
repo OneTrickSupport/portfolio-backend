@@ -12,7 +12,7 @@ RUN npx tsc
 FROM --platform=$BUILDPLATFORM node:20-alpine AS deps
 WORKDIR /deps
 COPY package.json package-lock.json* ./
-RUN HUSKY=0 npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 # Final Lambda image is arm64 — just copy compiled output and node_modules, no npm install.
 FROM public.ecr.aws/lambda/nodejs:20
