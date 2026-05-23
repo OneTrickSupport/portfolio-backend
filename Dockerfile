@@ -19,4 +19,5 @@ FROM public.ecr.aws/lambda/nodejs:20
 WORKDIR /var/task
 COPY --from=deps /deps/node_modules ./node_modules
 COPY --from=builder /build/dist ./
+COPY package.json ./
 CMD ["lambda.handler"]
