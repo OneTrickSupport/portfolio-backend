@@ -24,6 +24,8 @@ module "backend" {
   region               = var.region
   items_table_name     = module.data.items_table_name
   items_table_arn      = module.data.items_table_arn
+  users_table_name     = module.data.users_table_name
+  users_table_arn      = module.data.users_table_arn
   cognito_user_pool_id = module.auth.user_pool_id
   cognito_client_id    = module.auth.user_pool_client_id
   allowed_origins = concat(

@@ -49,17 +49,28 @@ resource "aws_iam_role_policy" "lambda_ddb" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "dynamodb:GetItem",
-        "dynamodb:PutItem",
-        "dynamodb:Query",
-        "dynamodb:DeleteItem",
-        "dynamodb:UpdateItem",
-      ]
-      Resource = var.items_table_arn
-    }]
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:Query",
+          "dynamodb:DeleteItem",
+          "dynamodb:UpdateItem",
+        ]
+        Resource = var.items_table_arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+        ]
+        Resource = var.users_table_arn
+      },
+    ]
   })
 }
 
@@ -81,6 +92,7 @@ resource "aws_lambda_function" "backend" {
   environment {
     variables = {
       ITEMS_TABLE_NAME     = var.items_table_name
+      USERS_TABLE_NAME     = var.users_table_name
       COGNITO_USER_POOL_ID = var.cognito_user_pool_id
       COGNITO_CLIENT_ID    = var.cognito_client_id
       ALLOWED_ORIGINS      = join(",", var.allowed_origins)

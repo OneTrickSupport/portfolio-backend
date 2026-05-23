@@ -14,6 +14,14 @@ variable "items_table_arn" {
   type = string
 }
 
+variable "users_table_name" {
+  type = string
+}
+
+variable "users_table_arn" {
+  type = string
+}
+
 variable "cognito_user_pool_id" {
   type = string
 }

@@ -8,10 +8,14 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch src/dev.ts",
+    "dev": "tsx watch --env-file .env src/dev.ts",
     "start": "node dist/dev.js",
-    "test": "vitest",
-    "typecheck": "tsc --noEmit"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:start": "docker compose up -d",
+    "db:stop": "docker compose down",
+    "db:setup": "bash scripts/setup-local-db.sh",
+    "db:admin": "DYNAMO_ENDPOINT=http://localhost:8000 AWS_REGION=eu-north-1 AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local dynamodb-admin"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.682.0",
@@ -24,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.17.0",
+    "dynamodb-admin": "^5.1.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

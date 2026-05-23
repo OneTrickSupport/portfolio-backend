@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { registerHealth } from "./health.js";
 import { registerItems } from "./items.js";
+import { registerUsers } from "./users.js";
 
 export async function buildServer() {
   const app = Fastify({
@@ -22,6 +23,7 @@ export async function buildServer() {
 
   await app.register(registerHealth);
   await app.register(registerItems);
+  await app.register(registerUsers);
 
   return app;
 }
