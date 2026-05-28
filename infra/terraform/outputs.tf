@@ -1,3 +1,13 @@
+output "site_url" {
+  value       = var.domain_name != "" ? "https://${var.domain_name}" : "https://${module.frontend.cloudfront_domain_name}"
+  description = "Public URL of the portfolio site."
+}
+
+output "name_servers" {
+  value       = var.domain_name != "" ? module.domain[0].name_servers : []
+  description = "Route 53 name servers — point your domain registrar's NS records to these after first apply."
+}
+
 output "cloudfront_url" {
   value = "https://${module.frontend.cloudfront_domain_name}"
 }

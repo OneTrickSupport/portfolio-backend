@@ -25,3 +25,9 @@ variable "google_oauth_client_secret" {
   sensitive = true
   default   = ""
 }
+
+variable "custom_domain_name" {
+  type        = string
+  default     = ""
+  description = "Custom domain, e.g. karlnilros.com. Adds https://{domain} and https://www.{domain} to Cognito callback/logout URLs."
+}

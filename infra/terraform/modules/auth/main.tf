@@ -68,17 +68,29 @@ resource "aws_cognito_user_pool_client" "main" {
 
   generate_secret = false
 
-  callback_urls = [
-    var.cloudfront_url,
-    "${var.cloudfront_url}/callback",
-    "http://localhost:5173",
-    "http://localhost:5173/callback",
-  ]
+  callback_urls = concat(
+    [
+      var.cloudfront_url,
+      "${var.cloudfront_url}/callback",
+      "http://localhost:5173",
+      "http://localhost:5173/callback",
+    ],
+    var.custom_domain_name != "" ? [
+      "https://${var.custom_domain_name}/callback",
+      "https://www.${var.custom_domain_name}/callback",
+    ] : [],
+  )
 
-  logout_urls = [
-    var.cloudfront_url,
-    "http://localhost:5173",
-  ]
+  logout_urls = concat(
+    [
+      var.cloudfront_url,
+      "http://localhost:5173",
+    ],
+    var.custom_domain_name != "" ? [
+      "https://${var.custom_domain_name}",
+      "https://www.${var.custom_domain_name}",
+    ] : [],
+  )
 
   allowed_oauth_flows                  = ["code"]
   allowed_oauth_scopes                 = ["openid", "email", "profile"]

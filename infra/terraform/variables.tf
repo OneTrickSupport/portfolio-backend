@@ -47,3 +47,9 @@ variable "extra_allowed_origins" {
   default     = ["http://localhost:5173"]
   description = "Extra allowed CORS origins, in addition to the CloudFront URL."
 }
+
+variable "domain_name" {
+  type        = string
+  default     = "karlnilros.com"
+  description = "Custom domain for the portfolio site. Set to empty string to use the CloudFront URL only."
+}
