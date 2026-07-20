@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import { registerHealth } from "./health.js";
 import { registerItems } from "./items.js";
 import { registerUsers } from "./users.js";
+import { registerGithub } from "./github.js";
 
 export async function buildServer() {
   const app = Fastify({
@@ -24,6 +25,7 @@ export async function buildServer() {
   await app.register(registerHealth);
   await app.register(registerItems);
   await app.register(registerUsers);
+  await app.register(registerGithub);
 
   return app;
 }
