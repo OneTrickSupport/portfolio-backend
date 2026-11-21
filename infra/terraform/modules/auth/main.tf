@@ -109,3 +109,14 @@ resource "aws_cognito_user_pool_client" "main" {
 
   depends_on = [aws_cognito_identity_provider.google]
 }
+
+# Site moderators. Members get "admin" in the cognito:groups claim of their access token,
+# which the backend checks before letting them delete other people's designs and comments.
+# Add or remove people in the Cognito console (Users -> Groups) or with
+#   aws cognito-idp admin-add-user-to-group --user-pool-id <id> --username <user> --group-name admin
+# They must sign out and in again for the change to take effect.
+resource "aws_cognito_user_group" "admin" {
+  name         = "admin"
+  user_pool_id = aws_cognito_user_pool.main.id
+  description  = "Moderators: may delete any planner design or comment"
+}

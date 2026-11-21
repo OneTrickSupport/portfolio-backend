@@ -14,6 +14,7 @@ import type { Comment, Design, PlannerStore } from "./store.js";
 // Apartment planner API.
 //   Anyone can list designs, open one and read its comments.
 //   Signed-in users can save designs (their own), like and comment.
+//   Moderators (Cognito group "admin") can also delete any design or comment.
 
 export type PlannerOptions = {
   store?: PlannerStore;
@@ -59,6 +60,7 @@ export async function registerPlanner(app: FastifyInstance, opts: PlannerOptions
         ...summary,
         state: JSON.parse(state) as unknown,
         mine: !!req.userId && req.userId === design.ownerId,
+        canModerate: !!req.isAdmin,
         likedByMe: req.userId ? await store.hasLiked(design.designId, req.userId) : false,
       },
     };
@@ -116,9 +118,14 @@ export async function registerPlanner(app: FastifyInstance, opts: PlannerOptions
   app.delete<IdParams>("/planner/designs/:id", { preHandler: requireAuth }, async (req, reply) => {
     const design = await load(req, reply);
     if (!design) return;
-    if (design.ownerId !== req.userId) return reply.code(403).send({ error: "Only the owner can delete this design" });
+    if (design.ownerId !== req.userId && !req.isAdmin) {
+      return reply.code(403).send({ error: "Only the owner can delete this design" });
+    }
     await store.deleteDesign(design.designId);
-    req.log.info({ userId: req.userId, designId: design.designId }, "planner design deleted");
+    req.log.info(
+      { userId: req.userId, designId: design.designId, ownerId: design.ownerId, asModerator: design.ownerId !== req.userId },
+      "planner design deleted",
+    );
     return reply.code(204).send();
   });
 
@@ -169,12 +176,16 @@ export async function registerPlanner(app: FastifyInstance, opts: PlannerOptions
         ? await store.getComment(design.designId, req.params.commentId)
         : null;
       if (!comment) return reply.code(404).send({ error: "Comment not found" });
-      // The author can remove their own comment; the design's owner can remove any on their design.
-      if (comment.userId !== req.userId && design.ownerId !== req.userId) {
+      // The author can remove their own comment; the design's owner can remove any on their design;
+      // a moderator can remove any comment.
+      if (comment.userId !== req.userId && design.ownerId !== req.userId && !req.isAdmin) {
         return reply.code(403).send({ error: "You cannot delete this comment" });
       }
       await store.deleteComment(design.designId, comment.commentId);
-      req.log.info({ userId: req.userId, designId: design.designId }, "planner comment deleted");
+      req.log.info(
+        { userId: req.userId, designId: design.designId, authorId: comment.userId, asModerator: !!req.isAdmin && comment.userId !== req.userId && design.ownerId !== req.userId },
+        "planner comment deleted",
+      );
       return reply.code(204).send();
     },
   );

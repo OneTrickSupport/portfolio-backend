@@ -31,11 +31,13 @@ npm test
 | `GET /planner/designs/:id` | anyone | one design with its plan |
 | `POST /planner/designs` | signed in | save a new design |
 | `POST /planner/designs/:id` | owner | change title, plan or preview |
-| `DELETE /planner/designs/:id` | owner | delete with its likes and comments |
+| `DELETE /planner/designs/:id` | owner or moderator | delete with its likes and comments |
 | `POST` / `DELETE /planner/designs/:id/like` | signed in | like / take back |
 | `GET /planner/designs/:id/comments` | anyone | comments, oldest first |
 | `POST /planner/designs/:id/comments` | signed in | add a comment |
-| `DELETE /planner/designs/:id/comments/:commentId` | author or design owner | remove a comment |
+| `DELETE /planner/designs/:id/comments/:commentId` | author, design owner or moderator | remove a comment |
+
+Moderators are the members of the Cognito group `admin` (created by Terraform; add people in the Cognito console). They can delete any design or comment but not edit them. A new member has to sign out and in again.
 
 Everything is stored in one DynamoDB table (`PLANNER_TABLE_NAME`, layout described in `src/planner/dynamo-store.ts`). Plans are validated field by field (`src/planner/schema.ts`) because other visitors' browsers render them.
 

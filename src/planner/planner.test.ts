@@ -5,16 +5,20 @@ import type { AuthHooks } from "../auth.js";
 import { MAX_DESIGNS_PER_USER } from "./schema.js";
 import { MemoryPlannerStore } from "./store.js";
 
-// Test double for Cognito: the "x-user" header says who is signed in.
+// Test double for Cognito: the "x-user" header says who is signed in; "admin" is the moderator.
 const fakeAuth: AuthHooks = {
   requireAuth: async (req: FastifyRequest, reply: FastifyReply) => {
     const user = req.headers["x-user"];
     if (typeof user !== "string") return reply.code(401).send({ error: "Missing Bearer token" });
     req.userId = user;
+    req.isAdmin = user === "admin";
   },
   optionalAuth: async (req: FastifyRequest) => {
     const user = req.headers["x-user"];
-    if (typeof user === "string") req.userId = user;
+    if (typeof user === "string") {
+      req.userId = user;
+      req.isAdmin = user === "admin";
+    }
   },
 };
 
@@ -201,5 +205,32 @@ describe("planner: comments", () => {
     expect((await call("DELETE", `/planner/designs/${id}/comments/${c1.json().comment.commentId}`, "anna")).statusCode).toBe(204);
     expect((await call("GET", `/planner/designs/${id}/comments`)).json().comments).toEqual([]);
     expect((await call("DELETE", `/planner/designs/${id}/comments/${c2.commentId}`, "anna")).statusCode).toBe(404);
+  });
+});
+
+describe("planner: moderators", () => {
+  it("tells the page who may moderate", async () => {
+    const id = await create("anna");
+    expect((await call("GET", `/planner/designs/${id}`, "admin")).json().design).toMatchObject({ canModerate: true, mine: false });
+    expect((await call("GET", `/planner/designs/${id}`, "anna")).json().design).toMatchObject({ canModerate: false, mine: true });
+    expect((await call("GET", `/planner/designs/${id}`)).json().design.canModerate).toBe(false);
+  });
+
+  it("can delete anyone's comment and design, but not edit them", async () => {
+    const id = await create("anna");
+    const c = (await call("POST", `/planner/designs/${id}/comments`, "bertil", { text: "Olämpligt" })).json().comment;
+
+    // an ordinary third user can do neither
+    expect((await call("DELETE", `/planner/designs/${id}/comments/${c.commentId}`, "cecilia")).statusCode).toBe(403);
+    expect((await call("DELETE", `/planner/designs/${id}`, "cecilia")).statusCode).toBe(403);
+
+    expect((await call("DELETE", `/planner/designs/${id}/comments/${c.commentId}`, "admin")).statusCode).toBe(204);
+    expect((await call("GET", `/planner/designs/${id}/comments`)).json().comments).toEqual([]);
+
+    // moderating is deleting only: the plan and title still belong to the owner
+    expect((await call("POST", `/planner/designs/${id}`, "admin", { title: "Ändrad av admin" })).statusCode).toBe(403);
+
+    expect((await call("DELETE", `/planner/designs/${id}`, "admin")).statusCode).toBe(204);
+    expect((await call("GET", `/planner/designs/${id}`)).statusCode).toBe(404);
   });
 });

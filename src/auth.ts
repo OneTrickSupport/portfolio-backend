@@ -23,8 +23,15 @@ function getVerifier() {
 declare module "fastify" {
   interface FastifyRequest {
     userId?: string;
+    /** True for members of the Cognito group "admin": site moderators. */
+    isAdmin?: boolean;
   }
 }
+
+/** Cognito group whose members may moderate (delete other people's designs and comments). */
+export const ADMIN_GROUP = "admin";
+const inAdminGroup = (payload: { "cognito:groups"?: string[] }) =>
+  Array.isArray(payload["cognito:groups"]) && payload["cognito:groups"].includes(ADMIN_GROUP);
 
 export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   const header = req.headers.authorization;
@@ -35,6 +42,7 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   try {
     const payload = await getVerifier().verify(token);
     req.userId = payload.sub;
+    req.isAdmin = inAdminGroup(payload);
   } catch (err) {
     req.log.warn({ err }, "JWT verification failed");
     return reply.code(401).send({ error: "Invalid token" });
@@ -51,6 +59,7 @@ export async function optionalAuth(req: FastifyRequest) {
   try {
     const payload = await getVerifier().verify(header.slice("bearer ".length));
     req.userId = payload.sub;
+    req.isAdmin = inAdminGroup(payload);
   } catch (err) {
     req.log.info({ err }, "ignoring invalid token on public route");
   }
