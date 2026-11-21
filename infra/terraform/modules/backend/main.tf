@@ -70,6 +70,22 @@ resource "aws_iam_role_policy" "lambda_ddb" {
         ]
         Resource = var.users_table_arn
       },
+      {
+        # Apartment planner: designs, likes and comments. Likes and comments use
+        # transactions, which are authorised through the same item-level actions.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:Query",
+          "dynamodb:DeleteItem",
+          "dynamodb:UpdateItem",
+        ]
+        Resource = [
+          var.planner_table_arn,
+          "${var.planner_table_arn}/index/*",
+        ]
+      },
     ]
   })
 }
@@ -93,6 +109,7 @@ resource "aws_lambda_function" "backend" {
     variables = {
       ITEMS_TABLE_NAME     = var.items_table_name
       USERS_TABLE_NAME     = var.users_table_name
+      PLANNER_TABLE_NAME   = var.planner_table_name
       COGNITO_USER_POOL_ID = var.cognito_user_pool_id
       COGNITO_CLIENT_ID    = var.cognito_client_id
       ALLOWED_ORIGINS      = join(",", var.allowed_origins)

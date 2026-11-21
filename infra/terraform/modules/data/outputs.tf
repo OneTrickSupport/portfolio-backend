@@ -13,3 +13,11 @@ output "users_table_name" {
 output "users_table_arn" {
   value = aws_dynamodb_table.users.arn
 }
+
+output "planner_table_name" {
+  value = aws_dynamodb_table.planner.name
+}
+
+output "planner_table_arn" {
+  value = aws_dynamodb_table.planner.arn
+}

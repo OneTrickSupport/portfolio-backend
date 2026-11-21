@@ -40,3 +40,25 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
     return reply.code(401).send({ error: "Invalid token" });
   }
 }
+
+/**
+ * For routes anyone may read: sets req.userId when a valid token is sent, and
+ * otherwise lets the request through as an anonymous visitor.
+ */
+export async function optionalAuth(req: FastifyRequest) {
+  const header = req.headers.authorization;
+  if (!header || !header.toLowerCase().startsWith("bearer ")) return;
+  try {
+    const payload = await getVerifier().verify(header.slice("bearer ".length));
+    req.userId = payload.sub;
+  } catch (err) {
+    req.log.info({ err }, "ignoring invalid token on public route");
+  }
+}
+
+export type AuthHooks = {
+  requireAuth: (req: FastifyRequest, reply: FastifyReply) => Promise<unknown>;
+  optionalAuth: (req: FastifyRequest, reply: FastifyReply) => Promise<unknown>;
+};
+
+export const cognitoAuth: AuthHooks = { requireAuth, optionalAuth };

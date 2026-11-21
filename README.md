@@ -21,6 +21,30 @@ npm run dev                  # http://localhost:3000
 npm test
 ```
 
+## Apartment planner API
+
+`src/planner/` serves the planner on the frontend's `/planner` routes. Anyone can read; saving, liking and commenting need a signed-in user.
+
+| Route | Who | What |
+|---|---|---|
+| `GET /planner/designs` | anyone | all saved designs, newest first (no plans) |
+| `GET /planner/designs/:id` | anyone | one design with its plan |
+| `POST /planner/designs` | signed in | save a new design |
+| `POST /planner/designs/:id` | owner | change title, plan or preview |
+| `DELETE /planner/designs/:id` | owner | delete with its likes and comments |
+| `POST` / `DELETE /planner/designs/:id/like` | signed in | like / take back |
+| `GET /planner/designs/:id/comments` | anyone | comments, oldest first |
+| `POST /planner/designs/:id/comments` | signed in | add a comment |
+| `DELETE /planner/designs/:id/comments/:commentId` | author or design owner | remove a comment |
+
+Everything is stored in one DynamoDB table (`PLANNER_TABLE_NAME`, layout described in `src/planner/dynamo-store.ts`). Plans are validated field by field (`src/planner/schema.ts`) because other visitors' browsers render them.
+
+`npm test` runs the route tests against an in-memory store. To also test the DynamoDB store, start DynamoDB Local (`npm run db:start`) and run:
+
+```bash
+AWS_ENDPOINT_URL=http://localhost:8000 AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local AWS_REGION=eu-north-1 npm test
+```
+
 ## Infrastructure
 
 ```bash
